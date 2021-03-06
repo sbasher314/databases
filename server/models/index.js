@@ -5,28 +5,42 @@ var queryPromise = util.promisify(db.query).bind(db);
 getId = (name, type, cb) => {
   db.query(`Select id from ${type}s where ${type}name = "${name}"`, (err, results) => {
     if (err) {
-      throw err;
+      console.log(err);
     }
-    cb(results[0]?.id);
+    if (name === undefined || name === 'undefined') {
+      cb(1);
+    } else if (results[0]?.id === undefined) {
+      queryPromise(`insert into ${type}s (${type}name) values("${name}")`)
+        .then(results => cb(results.insertId))
+        .catch(err => { console.log(err); });
+    } else {
+      cb(results[0]?.id);
+    }
+
   });
 };
 
 module.exports = {
   messages: {
     get: function (res) {
-      queryPromise('select text, username, roomname from messages')
+      queryPromise(
+        `select text, users.username, rooms.roomname from messages
+        inner join users on messages.username = users.id
+        inner join rooms on messages.roomname = rooms.id`) // should make this an inner join to return roomname and usernames rather than IDs
         .then(results => {
           res.end(JSON.stringify(results));
         })
-        .catch(err => { throw err; });
+        .catch(err => console.log(err));
     }, // a function which produces all the messages
     post: function (message, res) {
       getId(message.username, 'user', (id) => {
-        message.username = id;
+        message.username = id || 1;
         getId(message.roomname, 'room', (id) => {
-          message.roomname = id;
+          message.roomname = id || 1;
           queryPromise('insert into messages set ?', message)
-            .then(results => { res.end(); })
+            .then(results => {
+              res.end();
+            })
             .catch(err => { throw err; });
         });
       });
