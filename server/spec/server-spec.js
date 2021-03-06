@@ -32,7 +32,7 @@ describe('Persistent Node Chat Server', function() {
       method: 'POST',
       uri: 'http://localhost:3000/classes/users',
       json: { username: 'Valjean' }
-    }, function () {
+    }/*, function () {
       request({
         method: 'POST',
         uri: 'http://localhost:3000/classes/messages',
@@ -55,7 +55,8 @@ describe('Persistent Node Chat Server', function() {
           done();
         });
       });
-    });
+    }*/);
+
   });
 
   it('Should insert incomplete formatted messages to DB with default values', function(done) {

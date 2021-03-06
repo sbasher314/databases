@@ -1,6 +1,6 @@
-var db = require('../db');
+const db = require('../db');
 var util = require('util');
-var queryPromise = util.promisify(db.query).bind(db);
+//var queryPromise = util.promisify(db.query).bind(db);
 
 getId = (name, type, cb) => {
   db.query(`Select id from ${type}s where ${type}name = "${name}"`, (err, results) => {
@@ -57,15 +57,17 @@ module.exports = {
       return queryPromise(queryString)
         .then(results => JSON.stringify(results));
     },
-    post: function (username) {
-      return module.exports.users.get(username)
+    post: async function (username) {
+      console.log(db);
+      await db.User.create({username}, {fields: username});
+      /*return module.exports.users.get(username)
         .then(results => JSON.parse(results))
         .then(results => {
           if (results.length === 0) {
             return queryPromise('insert into users set ?', {username});
           }
         })
-        .catch(err => { throw err; });
+        .catch(err => { throw err; });*/
     }
   }
 };
