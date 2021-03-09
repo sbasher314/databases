@@ -6,7 +6,12 @@ router.get('/messages', controller.messages.get);
 
 router.post('/messages', controller.messages.post);
 
+router.get('/rooms', controller.rooms.get);
+
+router.post('/rooms', controller.rooms.post);
+
 router.get('/users', controller.users.get);
+
 
 router.post('/users', controller.users.post);
 

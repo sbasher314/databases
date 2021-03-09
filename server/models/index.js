@@ -1,6 +1,7 @@
 let db;
 require('../db')().then(result => db = result);
 
+var stringify = obj => JSON.stringify(obj, null, 2);
 var getId = (name, type, propName, insert = true) => {
   return db[type].findAll({
     attributes: ['id'],
@@ -32,18 +33,15 @@ var getId = (name, type, propName, insert = true) => {
 module.exports = {
   messages: {
     get: function () {
-      return db.Message.findAll({
-        raw: true,
-        attributes: ['text', 'userId', 'roomId', 'user.username', 'room.roomname'],
-        include: [{
-          model: db.User,
-          required: true
-        }, {
-          model: db.Room,
-          required: true
-        }]
-      })
-        .then(messages => JSON.stringify(messages, null, 2))
+      return db.sequelize.query(
+        `Select messages.*, users.username, rooms.roomname
+        From messages
+        inner join users
+        on messages.userId = users.id
+        inner join rooms
+        on messages.roomId = rooms.id
+        order by messages.updatedAt desc`)
+        .then(messages => stringify(messages[0]))
         .catch(err => console.log(err));
     }, // a function which produces all the messages
     post: async function (req) {
@@ -54,7 +52,7 @@ module.exports = {
         .then(result => {
           result.dataValues.username = req.username;
           result.dataValues.roomname = req.roomname;
-          return JSON.stringify(result.dataValues, null, 2);
+          return stringify(result.dataValues);
         });
     } // a function which can be used to insert a message into the database
   },
@@ -66,6 +64,31 @@ module.exports = {
     },
     post: function (username) {
       return getId(username, 'User', 'username');
+    }
+  },
+
+  rooms: {
+    get: async function(roomname) {
+      let queryObject = {roomname, raw: true, order: [['updatedAt', 'DESC']]};
+      if (roomname !== undefined) {
+        let roomId = await getId(roomname, 'Room', 'roomname');
+        queryObject.where = { roomId };
+      }
+      if (roomname === undefined) {
+        return db.Room.findAll(queryObject)
+          .then(stringify);
+      }
+      return db.Message.findAll(queryObject)
+        .then(result => {
+          if (result.length === 0) {
+            return Promise.reject('Room not found');
+          }
+          return stringify(result);
+        });
+    },
+    post: function(roomname) {
+      return db.room.create({roomname})
+        .then(stringify);
     }
   }
 };

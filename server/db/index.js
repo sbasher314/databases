@@ -19,7 +19,6 @@ module.exports = async () => {
         allowNull: false,
         unique: true
       }},
-      { timestamps: false }
     );
 
     var Room = db.define('room',
@@ -28,7 +27,6 @@ module.exports = async () => {
         allowNull: false,
         unique: true
       }},
-      { timestamps: false }
     );
 
     var Message = db.define('message',
@@ -57,7 +55,6 @@ module.exports = async () => {
           allowNull: false
         }
       },
-      { timestamps: false }
     );
 
     Message.belongsTo(User, {
@@ -83,7 +80,8 @@ module.exports = async () => {
       User,
       Room,
       Message,
-      dbName
+      dbName,
+      sequelize: db
     };
   });
 
