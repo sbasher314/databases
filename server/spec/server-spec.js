@@ -4,23 +4,26 @@
 var mysql = require('mysql');
 var request = require('request'); // You might need to npm install the request module!
 var expect = require('chai').expect;
-
+var { testing, dbName } = require('../config.js');
 describe('Persistent Node Chat Server', function() {
   var dbConnection;
 
   beforeEach(function(done) {
     dbConnection = mysql.createConnection({
-      user: 'student',
-      password: 'student',
-      database: 'chat',
+      user: 'root',
+      password: '',
+      database: dbName
     });
     dbConnection.connect();
 
-    var tablename = 'messages';
-
     /* Empty the db table before each test so that multiple tests
      * (or repeated runs of the tests) won't screw each other up: */
-    dbConnection.query('truncate ' + tablename, done);
+    if (testing) {
+      dbConnection.query('truncate ' + 'messages', done);
+    } else {
+      done();
+    }
+
   });
 
   afterEach(function() {
@@ -32,7 +35,7 @@ describe('Persistent Node Chat Server', function() {
       method: 'POST',
       uri: 'http://localhost:3000/classes/users',
       json: { username: 'Valjean' }
-    }/*, function () {
+    }, function () {
       request({
         method: 'POST',
         uri: 'http://localhost:3000/classes/messages',
@@ -43,8 +46,8 @@ describe('Persistent Node Chat Server', function() {
         }
       }, function () {
         var queryString = `select text, users.username, rooms.roomname from messages
-        inner join users on messages.username = users.id
-        inner join rooms on messages.roomname = rooms.id`;
+        inner join users on messages.userId = users.id
+        inner join rooms on messages.roomId = rooms.id`;
         var queryArgs = [];
 
         dbConnection.query(queryString, queryArgs, function(err, results) {
@@ -55,7 +58,7 @@ describe('Persistent Node Chat Server', function() {
           done();
         });
       });
-    }*/);
+    });
 
   });
 
@@ -68,8 +71,8 @@ describe('Persistent Node Chat Server', function() {
       }
     }, function () {
       var queryString = `select text, users.username, rooms.roomname from messages
-        inner join users on messages.username = users.id
-        inner join rooms on messages.roomname = rooms.id`;
+        inner join users on messages.userId = users.id
+        inner join rooms on messages.roomId = rooms.id`;
       var queryArgs = [];
 
       dbConnection.query(queryString, queryArgs, function(err, results) {
@@ -83,7 +86,7 @@ describe('Persistent Node Chat Server', function() {
   });
 
   it('Should output all messages from the DB', function(done) {
-    var queryString = 'insert into messages (text, username, roomname) values ("Men like you can never change!", (select id from users where username = "Anonymous"), (select id from rooms where roomname = "Lobby"))';
+    var queryString = 'insert into messages (text, userId, roomId) values ("Men like you can never change!", (select id from users where username = "Anonymous"), (select id from rooms where roomname = "Lobby"))';
     var queryArgs = [];
     dbConnection.query(queryString, queryArgs, function(err, results) {
       if (err) { throw err; }

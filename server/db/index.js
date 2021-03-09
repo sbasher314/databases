@@ -1,72 +1,93 @@
 var mysql = require('mysql2/promise');
-
-// var connection = mysql.createConnection({
-//   host: 'localhost',
-//   user: 'root',
-//   password: '',
-//   database: 'chat'
-// });
-
-// connection.connect();
-
-// module.exports = connection;
+var { testing, dbName, drop} = require('../config.js');
 
 const Sequelize = require('sequelize');
 
-const initialize = async function () {
-  const dbName = 'chat_test';
-  mysql.createConnection({
+module.exports = async () => {
+  return await mysql.createConnection({
     host: 'localhost',
     user: 'root',
     password: '',
   }).then(connection => {
     connection.query(`CREATE DATABASE IF NOT EXISTS ${dbName};`);
   }).then(res => {
-    module.exports = new Sequelize(dbName, 'root', '', {dialect: 'mysql'});
+    const db = new Sequelize(dbName, 'root', '', {dialect: 'mysql'});
 
-    var User = module.exports.define('user', {
-      username: {
+    var User = db.define('user',
+      { username: {
         type: Sequelize.STRING,
-        allowNull: false
-      }
-    });
+        allowNull: false,
+        unique: true
+      }},
+      { timestamps: false }
+    );
 
-    var Room = module.exports.define('room', {
-      roomname: {
+    var Room = db.define('room',
+      { roomname: {
         type: Sequelize.STRING,
-        allowNull: false
-      }
-    });
+        allowNull: false,
+        unique: true
+      }},
+      { timestamps: false }
+    );
 
-    var Message = module.exports.define('message', {
-      text: {
-        type: Sequelize.STRING,
-        defaultValue: '',
-        allowNull: false
-      },
-      roomname: {
-        type: Sequelize.INTEGER,
-        references: {
-          model: User,
-          key: 'id'
+    var Message = db.define('message',
+      {
+        text: {
+          type: Sequelize.STRING,
+          defaultValue: '',
+          allowNull: false
         },
-        allowNull: false
-      },
-      user: {
-        type: Sequelize.INTEGER,
-        references: {
-          model: Room,
-          key: 'id'
+        roomId: {
+          type: Sequelize.INTEGER,
+          references: {
+            model: Room,
+            key: 'id'
+          },
+          defaultValue: 1,
+          allowNull: false
         },
-        allowNull: false
-      }
+        userId: {
+          type: Sequelize.INTEGER,
+          references: {
+            model: User,
+            key: 'id'
+          },
+          defaultValue: 1,
+          allowNull: false
+        }
+      },
+      { timestamps: false }
+    );
+
+    Message.belongsTo(User, {
+      foreignKey: { name: 'userId'}
     });
-    module.exports.sync();
+    Message.belongsTo(Room, {
+      foreignKey: { name: 'roomId'}
+    });
+
+    if (drop) {
+      db.drop();
+    }
+    db.sync({force: drop})
+      .then(() => {
+        if (drop) {
+          User.create({ id: 1, username: 'Anonymous' });
+          Room.create({ id: 1, roomname: 'Lobby' });
+        }
+
+      });
+    //module.exports = db;
+    return {
+      User,
+      Room,
+      Message,
+      dbName
+    };
   });
 
 };
-
-initialize();
 // Create a database connection and export it from this file.
 // You will need to connect with the user "root", no password,
 // and to the database "chat".

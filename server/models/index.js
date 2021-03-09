@@ -1,73 +1,71 @@
-const db = require('../db');
-var util = require('util');
-//var queryPromise = util.promisify(db.query).bind(db);
+let db;
+require('../db')().then(result => db = result);
 
-getId = (name, type, cb) => {
-  db.query(`Select id from ${type}s where ${type}name = "${name}"`, (err, results) => {
-    if (err) {
-      console.log(err);
+var getId = (name, type, propName, insert = true) => {
+  return db[type].findAll({
+    attributes: ['id'],
+    where: {
+      [propName]: name
     }
-    if (name === undefined || name === 'undefined') {
-      cb(1);
-    } else if (results[0]?.id === undefined) {
-      queryPromise(`insert into ${type}s (${type}name) values("${name}")`)
-        .then(results => cb(results.insertId))
-        .catch(err => { console.log(err); });
-    } else {
-      cb(results[0]?.id);
-    }
+  })
+    .then(id => {
+      if (id.length === 0) {
+        if (!insert) {
+          return Promise.reject('Username not found');
+        }
+        return db[type].create({[propName]: name})
+          .then(id => {
+            return id;
+          });
 
-  });
+      } else {
+        return id[0];
+      }
+    })
+    .then(id => {
+      return Promise.resolve(id.dataValues.id);
+    })
+    .catch(err => console.log(err));
+
 };
 
 module.exports = {
   messages: {
-    get: function (res) {
-      queryPromise(
-        `select text, users.username, rooms.roomname from messages
-        inner join users on messages.username = users.id
-        inner join rooms on messages.roomname = rooms.id`) // should make this an inner join to return roomname and usernames rather than IDs
-        .then(results => {
-          res.end(JSON.stringify(results));
-        })
+    get: function () {
+      return db.Message.findAll({
+        raw: true,
+        attributes: ['text', 'userId', 'roomId', 'user.username', 'room.roomname'],
+        include: [{
+          model: db.User,
+          required: true
+        }, {
+          model: db.Room,
+          required: true
+        }]
+      })
+        .then(messages => JSON.stringify(messages, null, 2))
         .catch(err => console.log(err));
     }, // a function which produces all the messages
-    post: function (message, res) {
-      getId(message.username, 'user', (id) => {
-        message.username = id || 1;
-        getId(message.roomname, 'room', (id) => {
-          message.roomname = id || 1;
-          queryPromise('insert into messages set ?', message)
-            .then(results => {
-              res.end();
-            })
-            .catch(err => { throw err; });
+    post: async function (req) {
+      let message = {text: req.text};
+      message.userId = await getId(req.username, 'User', 'username');
+      message.roomId = await getId(req.roomname, 'Room', 'roomname');
+      return db.Message.create(message)
+        .then(result => {
+          result.dataValues.username = req.username;
+          result.dataValues.roomname = req.roomname;
+          return JSON.stringify(result.dataValues, null, 2);
         });
-      });
     } // a function which can be used to insert a message into the database
   },
 
   users: {
     // Ditto as above.
     get: function (username) {
-      var queryString = 'select * from users';
-      if (username !== undefined) {
-        queryString = `select * from users where username = "${username}"`;
-      }
-      return queryPromise(queryString)
-        .then(results => JSON.stringify(results));
+      return getId(username, 'User', 'username', false);
     },
-    post: async function (username) {
-      console.log(db);
-      await db.User.create({username}, {fields: username});
-      /*return module.exports.users.get(username)
-        .then(results => JSON.parse(results))
-        .then(results => {
-          if (results.length === 0) {
-            return queryPromise('insert into users set ?', {username});
-          }
-        })
-        .catch(err => { throw err; });*/
+    post: function (username) {
+      return getId(username, 'User', 'username');
     }
   }
 };
