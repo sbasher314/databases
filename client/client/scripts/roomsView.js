@@ -32,6 +32,11 @@ var RoomsView = {
       RoomsView.$dropdown.removeClass('dropdownVisible');
       RoomsView.$roomsList.fadeOut(50);
       RoomsView.$select.attr('list', 'roomsList');
+      setTimeout(() => {
+        let roomname = RoomsView.$select.val();
+        RoomsView.renderRoom(roomname);
+        RoomsView.roomsListPosition();
+      }, 10);
     }
     if (visibility === 'show') {
       RoomsView.dropdownVisible = true;
@@ -39,11 +44,7 @@ var RoomsView = {
       RoomsView.$roomsList.fadeIn(50);
       RoomsView.$select.attr('list', '');
     }
-    setTimeout(() => {
-      let roomname = RoomsView.$select.val();
-      RoomsView.renderRoom(roomname);
-      RoomsView.roomsListPosition();
-    }, 10);
+
 
   },
 

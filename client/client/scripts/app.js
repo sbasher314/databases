@@ -15,12 +15,11 @@ var App = {
   },
 
   fetch: function(callback = ()=>{}) {
-    Parse.readAll((data) => {
-      console.log(data);
+    Parse.readRoom(undefined, (data) => {
       // examine the response from the server request:
       RoomsView.renderRoom('Lobby');
       Rooms.populateRooms(data);
-      Messages = data;
+      //Messages = data;
       callback();
     });
   },

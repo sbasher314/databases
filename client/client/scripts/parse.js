@@ -5,7 +5,7 @@ var Parse = {
   create: function(message, successCB = null, errorCB = null) {
     $.ajax({
       // This is the url you should use to communicate with the parse API server.
-      url: Parse.server,
+      url: Parse.server + 'messages',
       type: 'POST',
       data: JSON.stringify(message),
       contentType: 'application/json',
@@ -15,6 +15,23 @@ var Parse = {
       error: errorCB || function (data) {
         // See: https://developer.mozilla.org/en-US/docs/Web/API/console.error
         console.error('chatterbox: Failed to send message', data);
+      }
+    });
+  },
+
+  createRoom: function(message, successCB = null, errorCB = null) {
+    $.ajax({
+      // This is the url you should use to communicate with the parse API server.
+      url: Parse.server + 'rooms',
+      type: 'POST',
+      data: JSON.stringify(message),
+      contentType: 'application/json',
+      success: successCB || function (data) {
+        console.log('chatterbox: Room Added');
+      },
+      error: errorCB || function (data) {
+        // See: https://developer.mozilla.org/en-US/docs/Web/API/console.error
+        console.error('chatterbox: Failed to add room', data);
       }
     });
   },
@@ -33,14 +50,12 @@ var Parse = {
 
   readRoom: function(roomname, successCB = () => {}, errorCB = null) {
     let roomMessages = [];
-    console.log(roomname);
     $.ajax({
       url: Parse.server + 'rooms',
       data: { roomname },
       type: 'GET',
       contentType: 'application/json',
       success: data => {
-        console.log(data);
         successCB(data);
         return data;
       },

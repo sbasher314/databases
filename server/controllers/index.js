@@ -37,7 +37,7 @@ module.exports = {
     // Ditto as above
     get: function (req, res) {
       let params = new URLSearchParams(req.originalUrl.split('?')[1]);
-      let username = req.body.username || params.get('username');
+      let username = params.get('username') || req.body.username;
       models.users.get(req.body.username)
         .then(res.end)
         .catch( err => {
@@ -59,10 +59,9 @@ module.exports = {
   rooms: {
     get: function(req, res) {
       let params = new URLSearchParams(req.originalUrl.split('?')[1]);
-      let roomname = req.body.roomname || params.get('roomname');
+      let roomname = params.get('roomname') || req.body.roomname;
       models.rooms.get(roomname)
         .then(result => {
-          console.log(result);
           res.write(result);
           res.end();
         })
@@ -72,8 +71,16 @@ module.exports = {
         });
     },
     post: function(req, res) {
-      models.rooms.post(req.body.roomname)
-        .then(res.end);
+      let params = new URLSearchParams(req.originalUrl.split('?')[1]);
+      let roomname = params.get('roomname') || req.body.roomname;
+      models.rooms.post(roomname)
+        .then(result => {
+          res.end(result);
+        })
+        .catch(err => {
+          res.statusCode = 409;
+          res.end(JSON.stringify(err));
+        });
     }
   }
 };

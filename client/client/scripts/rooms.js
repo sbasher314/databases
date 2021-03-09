@@ -11,6 +11,7 @@ var Rooms = {
     let room = MessageView.format({'roomname': roomname}).roomname;
     Rooms.names[room] = true;
     RoomsView.populateSelectBox();
+    Parse.createRoom({ roomname });
   },
   currentRoom: {},
 

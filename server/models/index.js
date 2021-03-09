@@ -70,24 +70,30 @@ module.exports = {
   rooms: {
     get: async function(roomname) {
       let queryObject = {roomname, raw: true, order: [['updatedAt', 'DESC']]};
-      if (roomname !== undefined) {
-        let roomId = await getId(roomname, 'Room', 'roomname');
-        queryObject.where = { roomId };
-      }
+      console.log(roomname);
       if (roomname === undefined) {
         return db.Room.findAll(queryObject)
           .then(stringify);
+      } else {
+        let id = await getId(roomname, 'Room', 'roomname', false);
+        return db.sequelize.query(
+          `Select messages.*, users.username, rooms.roomname
+          From messages
+          inner join users
+          on messages.userId = users.id
+          inner join rooms
+          on messages.roomId = rooms.id and messages.roomId = "${id}"`)
+          .then(result => {
+            if (result.length === 0) {
+              return Promise.reject('Room not found');
+            }
+            return stringify(result[0]);
+          })
+          .catch(err => console.log(err));
       }
-      return db.Message.findAll(queryObject)
-        .then(result => {
-          if (result.length === 0) {
-            return Promise.reject('Room not found');
-          }
-          return stringify(result);
-        });
     },
     post: function(roomname) {
-      return db.room.create({roomname})
+      return db.Room.create({roomname})
         .then(stringify);
     }
   }
