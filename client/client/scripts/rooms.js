@@ -2,7 +2,7 @@ var Rooms = {
   names: {},
   populateRooms: function(data) {
     data.forEach((item) => {
-      let roomname = MessageView.format(item).roomname ?? 'lobby';
+      let roomname = MessageView.format(item).roomname ?? 'Lobby';
       Rooms.names[roomname] = true;
     });
     RoomsView.populateSelectBox();

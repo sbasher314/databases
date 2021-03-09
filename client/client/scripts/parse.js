@@ -1,6 +1,6 @@
 var Parse = {
 
-  server: `http://parse.${window.CAMPUS}.hackreactor.com/chatterbox/classes/messages`,
+  server: 'http://localhost:3000/classes/',
 
   create: function(message, successCB = null, errorCB = null) {
     $.ajax({
@@ -21,9 +21,8 @@ var Parse = {
 
   readAll: function(successCB, errorCB = null) {
     $.ajax({
-      url: Parse.server,
+      url: Parse.server + 'messages',
       type: 'GET',
-      data: { order: '-createdAt' },
       contentType: 'application/json',
       success: successCB,
       error: errorCB || function(error) {
@@ -32,22 +31,22 @@ var Parse = {
     });
   },
 
-  readRoom: function(roomname, successCB = () => {}, messages) {
-    if (messages === undefined) {
-      Parse.readAll((data) => {
-        Messages = data;
-        successCB(Parse.readRoom(roomname, () => {}, data));
-      });
-    } else {
-      let roomMessages = [];
-      messages.results.forEach((message) => {
-        message = MessageView.format(message);
-        if (MessageView.format(message).roomname === roomname) {
-          roomMessages.push(message);
-        }
-      });
-      successCB(roomMessages);
-      return roomMessages;
-    }
+  readRoom: function(roomname, successCB = () => {}, errorCB = null) {
+    let roomMessages = [];
+    console.log(roomname);
+    $.ajax({
+      url: Parse.server + 'rooms',
+      data: { roomname },
+      type: 'GET',
+      contentType: 'application/json',
+      success: data => {
+        console.log(data);
+        successCB(data);
+        return data;
+      },
+      error: errorCB || function(error) {
+        console.error('chatterbox: Failed to fetch messages', error);
+      }
+    });
   }
 };
